@@ -1,0 +1,202 @@
+"""
+Sudoku Solver - SkillCraft Technology Task 03
+Uses backtracking algorithm to solve any valid Sudoku puzzle.
+"""
+
+def print_board(board, title=""):
+    """Print the Sudoku board in a formatted grid."""
+    if title:
+        print(f"\n{'='*37}")
+        print(f"  {title}")
+        print(f"{'='*37}")
+    else:
+        print(f"\n{'-'*37}")
+
+    for i, row in enumerate(board):
+        if i % 3 == 0 and i != 0:
+            print("------+-------+------")
+        row_str = ""
+        for j, num in enumerate(row):
+            if j % 3 == 0 and j != 0:
+                row_str += " | "
+            else:
+                row_str += " "
+            row_str += str(num) if num != 0 else "."
+        print(f" {row_str}")
+    print(f"{'-'*37}")
+
+
+def is_valid(board, row, col, num):
+    """
+    Check if placing 'num' at board[row][col] is valid.
+    Validates row, column, and 3x3 box constraints.
+    """
+    # Check row
+    if num in board[row]:
+        return False
+
+    # Check column
+    if num in [board[r][col] for r in range(9)]:
+        return False
+
+    # Check 3x3 box
+    box_row, box_col = 3 * (row // 3), 3 * (col // 3)
+    for r in range(box_row, box_row + 3):
+        for c in range(box_col, box_col + 3):
+            if board[r][c] == num:
+                return False
+
+    return True
+
+
+def find_empty(board):
+    """Find the next empty cell (represented by 0). Returns (row, col) or None."""
+    for i in range(9):
+        for j in range(9):
+            if board[i][j] == 0:
+                return (i, j)
+    return None
+
+
+def solve(board):
+    """
+    Solve the Sudoku using backtracking.
+    Returns True if solved, False if no solution exists.
+    """
+    empty = find_empty(board)
+
+    # No empty cells → puzzle is solved
+    if not empty:
+        return True
+
+    row, col = empty
+
+    for num in range(1, 10):
+        if is_valid(board, row, col, num):
+            board[row][col] = num
+
+            if solve(board):
+                return True
+
+            # Backtrack
+            board[row][col] = 0
+
+    return False
+
+
+def validate_input(board):
+    """Validate that the input board is a proper 9x9 grid with values 0-9."""
+    if len(board) != 9:
+        return False, "Board must have exactly 9 rows."
+    for i, row in enumerate(board):
+        if len(row) != 9:
+            return False, f"Row {i+1} must have exactly 9 columns."
+        for val in row:
+            if not (0 <= val <= 9):
+                return False, f"All values must be between 0 and 9 (0 = empty). Found: {val}"
+    return True, "Valid"
+
+
+def get_board_from_input():
+    """Interactively get a Sudoku board from the user."""
+    print("\n📝 Enter your Sudoku puzzle row by row.")
+    print("   Use 0 or . for empty cells. Separate digits with spaces.")
+    print("   Example: 5 3 0 0 7 0 0 0 0\n")
+
+    board = []
+    for i in range(9):
+        while True:
+            raw = input(f"  Row {i+1}: ").strip()
+            # Allow dot notation
+            raw = raw.replace(".", "0")
+            parts = raw.split()
+            if len(parts) == 9 and all(p.isdigit() and 0 <= int(p) <= 9 for p in parts):
+                board.append([int(p) for p in parts])
+                break
+            # Also accept 9-digit string without spaces
+            if len(raw) == 9 and raw.isdigit():
+                board.append([int(c) for c in raw])
+                break
+            print("  ⚠️  Invalid input. Enter exactly 9 digits (0-9) separated by spaces.")
+    return board
+
+
+def main():
+    print("╔══════════════════════════════════════╗")
+    print("║        SUDOKU SOLVER v1.0            ║")
+    print("║     SkillCraft Technology - Task 03  ║")
+    print("╚══════════════════════════════════════╝")
+
+    # --- Sample puzzles for demo ---
+    sample_puzzles = {
+        "Easy": [
+            [5, 3, 0, 0, 7, 0, 0, 0, 0],
+            [6, 0, 0, 1, 9, 5, 0, 0, 0],
+            [0, 9, 8, 0, 0, 0, 0, 6, 0],
+            [8, 0, 0, 0, 6, 0, 0, 0, 3],
+            [4, 0, 0, 8, 0, 3, 0, 0, 1],
+            [7, 0, 0, 0, 2, 0, 0, 0, 6],
+            [0, 6, 0, 0, 0, 0, 2, 8, 0],
+            [0, 0, 0, 4, 1, 9, 0, 0, 5],
+            [0, 0, 0, 0, 8, 0, 0, 7, 9],
+        ],
+        "Hard": [
+            [0, 0, 0, 2, 6, 0, 7, 0, 1],
+            [6, 8, 0, 0, 7, 0, 0, 9, 0],
+            [1, 9, 0, 0, 0, 4, 5, 0, 0],
+            [8, 2, 0, 1, 0, 0, 0, 4, 0],
+            [0, 0, 4, 6, 0, 2, 9, 0, 0],
+            [0, 5, 0, 0, 0, 3, 0, 2, 8],
+            [0, 0, 9, 3, 0, 0, 0, 7, 4],
+            [0, 4, 0, 0, 5, 0, 0, 3, 6],
+            [7, 0, 3, 0, 1, 8, 0, 0, 0],
+        ]
+    }
+
+    print("\nOptions:")
+    print("  [1] Solve a sample Easy puzzle")
+    print("  [2] Solve a sample Hard puzzle")
+    print("  [3] Enter your own puzzle")
+    print("  [4] Exit")
+
+    while True:
+        choice = input("\nChoose an option (1-4): ").strip()
+
+        if choice == "4":
+            print("\n👋 Goodbye!\n")
+            break
+
+        if choice in ("1", "2"):
+            level = "Easy" if choice == "1" else "Hard"
+            board = [row[:] for row in sample_puzzles[level]]  # deep copy
+            print_board(board, f"{level} Puzzle (Unsolved)")
+
+        elif choice == "3":
+            board = get_board_from_input()
+            valid, msg = validate_input(board)
+            if not valid:
+                print(f"\n❌ Error: {msg}")
+                continue
+            print_board(board, "Your Puzzle (Unsolved)")
+
+        else:
+            print("  ⚠️  Please choose 1, 2, 3, or 4.")
+            continue
+
+        print("\n🔄 Solving...")
+        import copy
+        original = copy.deepcopy(board)
+
+        if solve(board):
+            print("✅ Puzzle Solved Successfully!")
+            print_board(board, "Solved Puzzle")
+
+            # Show which cells were filled
+            filled = sum(1 for i in range(9) for j in range(9) if original[i][j] == 0)
+            print(f"  → Filled in {filled} empty cells.\n")
+        else:
+            print("\n❌ No solution exists for this puzzle. Please check your input.\n")
+
+
+if __name__ == "__main__":
+    main()
